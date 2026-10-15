@@ -1,0 +1,41 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0f766e"><link rel="manifest" href="manifest.json"><link rel="icon" href="icon-192.png"><title>Telugu Daily</title>
+<style>
+:root{--bg:#f6f3ee;--c:#fff;--t:#1c1917;--m:#78716c;--a:#0f766e;--l:#e7e2d9}
+@media(prefers-color-scheme:dark){:root{--bg:#141210;--c:#1f1c19;--t:#f5f1ea;--m:#a8a29e;--a:#2dd4bf;--l:#34302b}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--t);font:16px/1.5 system-ui,sans-serif;padding-bottom:76px}
+main{max-width:560px;margin:0 auto;padding:18px}h1{font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--m);margin:4px 0 12px}
+.card{background:var(--c);border:1px solid var(--l);border-radius:16px;padding:20px;margin-bottom:12px}
+.w{font-size:34px;font-weight:700;color:var(--a);margin:0}.p{color:var(--m);margin:2px 0 10px}.mean{font-size:20px;margin:0 0 14px}
+.s{border-left:3px solid var(--a);padding-left:12px;margin:0}.s b{display:block;font-size:18px}.s span{color:var(--m)}
+button,input{font:inherit;color:var(--t)}button{background:var(--a);color:var(--bg);border:0;border-radius:10px;padding:10px 16px;margin:12px 8px 0 0}
+button.g{background:none;border:1px solid var(--l);color:var(--t)}input[type=search]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--l);background:var(--c);margin-bottom:12px}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--c);border-top:1px solid var(--l)}nav a{flex:1;text-align:center;padding:14px 0;color:var(--m);text-decoration:none;font-size:14px}nav a.on{color:var(--a);font-weight:700}
+.d{font-size:12px;color:var(--m)}.star{float:right;background:none;border:0;font-size:24px;margin:0;padding:0;color:var(--a)}
+</style></head><body><main id="v"></main>
+<nav><a href="#today">Today</a><a href="#history">History</a><a href="#quiz">Test</a><a href="#more">More</a></nav>
+<script src="data.js"></script>
+<script>
+const K='teluguDaily',$=s=>document.querySelector(s);
+const ds=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+let S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+S=S||{start:ds(new Date()),done:{},fav:{},rev:{}};
+const save=()=>localStorage.setItem(K,JSON.stringify(S));save();
+const today=()=>Math.max(0,Math.min(Math.round((new Date(ds(new Date())+'T00:00:00')-new Date(S.start+'T00:00:00'))/864e5),E.length-1));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function card(i,hide){const e=E[i];return `<div class="card"><button class="star" onclick="fav(${i})" aria-label="Favorite">${S.fav[i]?'★':'☆'}</button><div class="d">Day ${i+1}</div><p class="w">${esc(e[0])}</p><p class="p">say: ${esc(e[1])}</p>${hide?'':`<p class="mean">${esc(e[2])}</p><p class="s"><b>${esc(e[3])}</b><span>${esc(e[4])}</span></p>`}</div>`}
+function fav(i){S.fav[i]=!S.fav[i];save();render()}
+function learn(i){S.done[i]=1;save();render()}
+let q=null,show=false,fo=false,term='';
+const unlocked=()=>Array.from({length:today()+1},(_,i)=>i);
+function render(){const h=location.hash.slice(1)||'today';document.querySelectorAll('nav a').forEach(a=>a.classList.toggle('on',a.hash==='#'+h));let o='';
+if(h==='today'){const i=today();o='<h1>Today\'s word</h1>'+card(i)+(S.done[i]?'<p class="d">Marked as learned ✓</p>':`<button onclick="learn(${i})">I learned this</button>`)+(E.length-1===i&&Math.round((new Date(ds(new Date())+'T00:00:00')-new Date(S.start+'T00:00:00'))/864e5)>i?'<p class="d">You have seen every word so far. More content is needed.</p>':'')}
+else if(h==='history'){const t=term.toLowerCase();const l=unlocked().reverse().filter(i=>(!fo||S.fav[i])&&(E[i].join(' ').toLowerCase().includes(t)));o=`<h1>History</h1><input type="search" id="se" placeholder="Search word or meaning" value="${esc(term)}"><button class="g" style="margin-top:0" onclick="fo=!fo;render()">${fo?'Show all':'Favorites only'}</button><div style="height:12px"></div>`+(l.map(i=>card(i)).join('')||'<p class="d">Nothing found.</p>')}
+else if(h==='quiz'){const u=unlocked();if(q===null||q>=E.length||!u.includes(q))q=u[Math.floor(Math.random()*u.length)];o='<h1>Test yourself</h1>'+card(q,!show)+(show?`<button onclick="nx(1)">Remembered</button><button class="g" onclick="nx(0)">Again</button>`:'<button onclick="show=true;render()">Show meaning</button>')}
+else{o=`<h1>More</h1><div class="card"><b>How to read the spelling</b><p>aa, ee, oo = long sounds (hold them longer). Hyphens split syllables. Stress each syllable evenly. Telugu has several t, d, n sounds that English spelling cannot separate, so treat this as a close guide, not a perfect one.</p></div><div class="card"><b>Backup</b><p class="d">Clearing Chrome data or uninstalling erases progress. Export now and then.</p><button onclick="exp()">Export backup</button><button class="g" onclick="$('#im').click()">Import</button><input type="file" id="im" accept=".json" hidden></div><p class="d">Started ${S.start}. Learned ${Object.keys(S.done).length} of ${today()+1} unlocked.</p>`}
+$('#v').innerHTML=o;const se=$('#se');if(se){se.oninput=e=>{term=e.target.value;const p=e.target.selectionStart;render();const n=$('#se');n.focus();n.setSelectionRange(p,p)}}const im=$('#im');if(im)im.onchange=imp}
+function nx(ok){if(ok)S.rev[q]=(S.rev[q]||0)+1;save();q=null;show=false;render()}
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'}));a.download='telugu-backup-'+ds(new Date())+'.json';a.click()}
+function imp(e){const f=e.target.files[0];if(!f)return;f.text().then(t=>{try{const d=JSON.parse(t);if(!d.start||!d.done)throw 0;S=d;save();render();alert('Backup restored')}catch(x){alert('Not a valid backup file')}})}
+addEventListener('hashchange',()=>{show=false;render()});render();
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');
+</script></body></html>
